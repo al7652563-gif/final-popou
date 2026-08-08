@@ -130,7 +130,7 @@
     overflow: hidden;
   }
 
-  .frame img {
+  .frame video {
     position: absolute;
     top: 0;
     left: 0;
@@ -146,6 +146,48 @@
     width: 100%;
     height: 100%;
     background: linear-gradient(180deg, rgba(6,7,9,0.35) 0%, rgba(6,7,9,0.55) 35%, rgba(6,7,9,0.88) 75%);
+  }
+
+  .reveal-loading {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 5;
+    background-size: cover;
+    background-position: center;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .reveal-loading.show {
+    display: flex;
+  }
+
+  .reveal-loading::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(6,7,9,0.55);
+  }
+
+  .reveal-spinner {
+    position: relative;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 3px solid rgba(255,140,0,0.25);
+    border-top-color: var(--orange);
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 
   .stage {
@@ -474,8 +516,14 @@
 </div>
 
 <div class="frame">
-  <img id="bgImage" src="https://pub-5f52dd93f3804fbcb113f853eb38a385.r2.dev/USA/update-image.jpeg" alt="">
+  <video id="bgVideo"
+         poster="https://pub-5f52dd93f3804fbcb113f853eb38a385.r2.dev/USA/update-image.jpeg"
+         src="https://pub-5f52dd93f3804fbcb113f853eb38a385.r2.dev/USA/Untitled%204.mp4"
+         muted loop playsinline preload="auto"></video>
   <div class="video-dim"></div>
+  <div class="reveal-loading" id="revealLoading" style="background-image:url('https://pub-5f52dd93f3804fbcb113f853eb38a385.r2.dev/YOUR-THUMBNAIL-FILE.jpg');">
+    <div class="reveal-spinner" style="z-index:1;"></div>
+  </div>
 
   <div class="stage" id="stage">
     <div class="wrap">
@@ -554,7 +602,7 @@
   <div id="div-gpt-ad-bottom-300x250"></div>
 </div>
 
-<div class="version-tag">build v28 (image)</div>
+<div class="version-tag">build v31 (video)</div>
 
 <script>
   var GAM_NETWORK_ID = "23313830399";
@@ -565,7 +613,7 @@
 
   var stepNames = ["Age Verification", "Country Verification", "Human Verification", "Terms Agreement"];
   var stepPaths = ["/age-verification", "/country-verification", "/human-verification", "/terms-agreement"];
-  var finalPath = "/image-revealed";
+  var finalPath = "/video-playing";
 
   // GA4
   (function () {
@@ -622,13 +670,28 @@
     var next = current + 1;
 
     if (next > TOTAL_STEPS) {
+      // Unmute + play RIGHT NOW, synchronously inside the click —
+      // mobile browsers block unmuted playback if it happens after a delay.
+      var v = document.getElementById('bgVideo');
+      v.muted = false;
+      v.play().catch(function () { /* stays muted if browser still blocks it */ });
+
+      // Close the popup immediately, but keep the thumbnail+spinner overlay
+      // on top for 2 seconds before revealing the (already playing) video.
       var cards = document.querySelectorAll('.card');
       for (var i = 0; i < cards.length; i++) {
         cards[i].classList.remove('active');
       }
       refreshAds();
-      window.trackStep(finalPath, "Image Revealed");
+      window.trackStep(finalPath, "Video Playing");
       completeFlow();
+
+      var reveal = document.getElementById('revealLoading');
+      reveal.classList.add('show');
+      setTimeout(function () {
+        reveal.classList.remove('show');
+      }, 2000);
+
       return;
     }
 
